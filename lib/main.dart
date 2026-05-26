@@ -6,7 +6,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
-import 'dart:io' show Platform; // Import Platform
 import 'dart:async';
 import 'utils/constants.dart'; // Import constants
 
@@ -69,7 +68,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Preserve the splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  if (!kIsWeb) FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Lock screen orientation to portrait only
   await SystemChrome.setPreferredOrientations([
@@ -91,7 +90,7 @@ void main() async {
   final bool seenIntro = await FirstLaunchService.hasSeenIntroduction();
 
   // Remove the splash screen now that initialization is done
-  FlutterNativeSplash.remove();
+  if (!kIsWeb) FlutterNativeSplash.remove();
 
   runApp(
     Phoenix(
@@ -441,7 +440,7 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(width: 48),
                             _buildActionItem('star.png', 'هەڵسەنگاندن', Colors.amber, onTap: () async {
                               final url = Uri.parse(
-                                  Platform.isAndroid ? AppConstants.androidStoreUrl : AppConstants.iosStoreUrl);
+                                  kIsWeb ? AppConstants.androidStoreUrl : AppConstants.androidStoreUrl);
                               if (await canLaunchUrl(url)) {
                                 await launchUrl(url, mode: LaunchMode.externalApplication);
                               }
@@ -511,8 +510,7 @@ class _HomePageState extends State<HomePage> {
                           'iOS: ${AppConstants.iosStoreUrl}');
                     }),
                     _buildActionItem('star.png', 'هەڵسەنگاندن', Colors.amber, onTap: () async {
-                      final url = Uri.parse(
-                          Platform.isAndroid ? AppConstants.androidStoreUrl : AppConstants.iosStoreUrl);
+                      final url = Uri.parse(AppConstants.androidStoreUrl);
                       if (await canLaunchUrl(url)) {
                         await launchUrl(url, mode: LaunchMode.externalApplication);
                       }
