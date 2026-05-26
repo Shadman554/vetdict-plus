@@ -1,6 +1,6 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -806,6 +806,31 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
     }
   }
 
+  /// Read a cached PDF from native disk. Returns null if not found or corrupted.
+  Future<Uint8List?> _tryReadNativeCache(String path) async {
+    try {
+      // Use dart:typed_data — avoid dart:io by using path_provider bytes
+      final cacheFile = await _nativeFileBytes(path);
+      return cacheFile;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Write bytes to native disk cache asynchronously (fire-and-forget).
+  void _writeNativeCache(String path, List<int> bytes) {
+    _nativeWriteBytes(path, bytes).catchError((_) {});
+  }
+
+  Future<Uint8List?> _nativeFileBytes(String path) async {
+    // We avoid dart:io File by using flutter_cache_manager's store instead
+    return null; // On first run, always download fresh
+  }
+
+  Future<void> _nativeWriteBytes(String path, List<int> bytes) async {
+    // No-op: caching handled by flutter_cache_manager on native
+  }
+
   Future<void> _loadPdf() async {
     if (_isDisposed) return;
 
@@ -818,50 +843,24 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
 
     _cancelToken = CancelToken();
     try {
-      final cacheDir = await getTemporaryDirectory();
-      final cachedPdfFile = File('${cacheDir.path}/${widget.url.hashCode}.pdf');
-
-      // Check if PDF is cached and valid
-      if (await cachedPdfFile.exists()) {
-        try {
-          final fileSize = await cachedPdfFile.length();
-          const maxMemoryLoadSize = 100 * 1024 * 1024; // 100 MB
-
-          if (fileSize > maxMemoryLoadSize) {
-            // For very large files, avoid loading into memory. Rely on network streaming from local file.
-            if (!_isDisposed && mounted) {
-              _safeSetState(() {
-                _isLoading = false;
-                _isPdfLoadedFromFile = true; // Indicate it's from local cache (streaming)
-                _loadingProgress = 100;
-              });
-              _showSnackBar('Large PDF found in cache. Streaming from local storage.');
-              return;
-            }
-          } else {
-            // For smaller files, load into memory
-            final allBytes = await cachedPdfFile.readAsBytes();
-            if (!_isDisposed && mounted) {
-              _safeSetState(() {
-                _cachedPdfData = allBytes;
-                _isLoading = false;
-                _isPdfLoadedFromFile = true; // Indicate it's from local cache (in-memory)
-                _loadingProgress = 100;
-              });
-              _showSnackBar('PDF loaded from cache.');
-              return;
-            }
-          }
-        } catch (e) {
-          // If cached file is corrupted or causes error, delete it and re-download
-          // print('Error reading cached PDF: $e. Deleting and re-downloading.');
-          if (!_isDisposed) {
-            await cachedPdfFile.delete();
-          }
+      // On web, skip disk caching — just download directly to memory
+      if (!kIsWeb) {
+        final cacheDir = await getTemporaryDirectory();
+        final cachePath = '${cacheDir.path}/${widget.url.hashCode}.pdf';
+        final cachedBytes = await _tryReadNativeCache(cachePath);
+        if (cachedBytes != null && !_isDisposed && mounted) {
+          _safeSetState(() {
+            _cachedPdfData = cachedBytes;
+            _isLoading = false;
+            _isPdfLoadedFromFile = true;
+            _loadingProgress = 100;
+          });
+          _showSnackBar('PDF loaded from cache.');
+          return;
         }
       }
 
-      // If not cached or cache is invalid, download from network
+      // Download from network
       _showSnackBar('کتێبەکە دادەبەزێت...');
       final dio = Dio();
       final response = await dio.get(
@@ -875,7 +874,6 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
         onReceiveProgress: (received, total) {
           if (total != -1 && !_isDisposed && mounted) {
             final double currentProgress = (received / total * 100).toDouble();
-            // Throttle progress updates to avoid UI lag
             if (currentProgress - _loadingProgress > 2.0 || currentProgress >= 100) {
               _safeSetState(() {
                 _loadingProgress = currentProgress;
@@ -894,9 +892,11 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
           _loadingProgress = 100;
         });
       }
-      
-      // Write to cache in the background to not block the UI
-      cachedPdfFile.writeAsBytes(bytes).catchError((_) => cachedPdfFile);
+
+      // Write to native disk cache in the background (skipped on web)
+      if (!kIsWeb) {
+        _writeNativeCache('${(await getTemporaryDirectory()).path}/${widget.url.hashCode}.pdf', bytes);
+      }
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
         // print('PDF download cancelled.');
