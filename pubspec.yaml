@@ -1,0 +1,86 @@
+name: vetstan
+description: VET DICT+ - The ultimate veterinary dictionary for students and professionals. Covers drugs, diseases, terminology, tests, and more.
+publish_to: "none" # Prevents accidental publishing to pub.dev
+
+version: 2.0.1+31
+
+environment: 
+  sdk: ">=3.1.5 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  google_nav_bar: ^5.0.6
+  provider: ^6.1.5
+  shared_preferences: ^2.3.3
+  flutter_secure_storage: ^9.2.2
+  flutter_localizations:
+    sdk: flutter
+
+  share_plus: ^7.2.1
+  url_launcher: ^6.2.1
+  intl: ^0.20.2
+  flutter_tts: ^3.8.5
+  path_provider: ^2.1.5
+  cached_network_image: ^3.3.0
+  flutter_cache_manager: ^3.4.1
+  http: ^1.2.1
+  loading_animation_widget: ^1.2.0+4
+  photo_view: ^0.14.0
+  shimmer: ^3.0.0
+  dio: ^5.4.0
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  syncfusion_flutter_pdfviewer: ^28.1.35
+  google_sign_in: ^6.1.6
+  flutter_phoenix: ^1.1.1
+  onesignal_flutter: ^5.1.2
+  flutter_svg: ^2.0.10
+  webview_flutter: ^4.7.0
+  flutter_native_splash: ^2.4.7
+  upgrader: ^11.4.0
+  font_awesome_flutter: ^10.7.0
+  flutter_markdown: ^0.7.4
+  package_info_plus: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/logo.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#000000"
+  color_dark: "#000000"
+  image: assets/icon/vet_dict_plus.png
+  android_12:
+    color: "#000000"
+    image: assets/icon/vet_dict_plus.png
+  ios: true
+  web: false
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    - assets/Icons/ # Feature icons
+    - assets/icon/ # App logo
+    - assets/fonts/
+    - assets/images/swibe/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+    - family: NRT
+      fonts:
+        - asset: assets/fonts/Nrt_bold.ttf
+          weight: 700

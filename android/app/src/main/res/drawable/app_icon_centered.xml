@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    
+    <!-- Blue background circle for the icon -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M40,40m35,0a35,35 0,1 1,-70 0a35,35 0,1 1,70 0"/>
+    
+    <!-- Paw print shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,25c-2,0 -4,2 -4,4c0,2 2,4 4,4c2,0 4,-2 4,-4C44,27 42,25 40,25z"/>
+    
+    <!-- Main paw pad -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,35c-3,0 -5,3 -5,6c0,3 2,6 5,6c3,0 5,-3 5,-6C40,38 38,35 35,35z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,35c-3,0 -5,3 -5,6c0,3 2,6 5,6c3,0 5,-3 5,-6C50,38 48,35 45,35z"/>
+    
+    <!-- Toe pads -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,30c-1.5,0 -3,1.5 -3,3c0,1.5 1.5,3 3,3c1.5,0 3,-1.5 3,-3C33,31.5 31.5,30 30,30z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,30c-1.5,0 -3,1.5 -3,3c0,1.5 1.5,3 3,3c1.5,0 3,-1.5 3,-3C53,31.5 51.5,30 50,30z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,28c-1.5,0 -3,1.5 -3,3c0,1.5 1.5,3 3,3c1.5,0 3,-1.5 3,-3C38,29.5 36.5,28 35,28z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,28c-1.5,0 -3,1.5 -3,3c0,1.5 1.5,3 3,3c1.5,0 3,-1.5 3,-3C48,29.5 46.5,28 45,28z"/>
+    
+    <!-- Small sparkles -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,20l1,3l3,1l-3,1l-1,3l-1,-3l-3,-1l3,-1z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,25l0.5,1.5l1.5,0.5l-1.5,0.5l-0.5,1.5l-0.5,-1.5l-1.5,-0.5l1.5,-0.5z"/>
+    
+    <!-- Small gear icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,52l2,0l0.5,-1.5l1.5,0.5l1,-1l-0.5,-1.5l1.5,-0.5l0,-2l-1.5,-0.5l0.5,-1.5l-1,-1l-1.5,0.5l-0.5,-1.5l-2,0l-0.5,1.5l-1.5,-0.5l-1,1l0.5,1.5l-1.5,0.5l0,2l1.5,0.5l-0.5,1.5l1,1l1.5,-0.5z"/>
+
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M50,48a2,2 0,1 0,0 4a2,2 0,1 0,0 -4z"/>
+</vector>

@@ -1,0 +1,22 @@
+{
+  "app_name": "VETDICT+", 
+  "home": "Home",
+  "settings": "Settings",
+  "notifications": "Notifications",
+  "language": "Language",
+  "select_language": "Select Language",
+  "english": "English",
+  "kurdish": "Kurdish",
+  "save": "Save",
+  "cancel": "Cancel",
+  "drugs": "drugs",
+  "Search Drugs,Terms,Diseases...": "Search Drugs,Terms,Diseases...",
+  "More": "More",
+  "Test Categories": "Test Categories",
+  "all_books": "All",
+  "kurdish books": "Kurdish Books",
+  "english books": "English Books",
+  "arabic books": "Arabic Books",
+  "instruments": "Instruments",
+  "search_instruments": "Search instruments..."
+}
