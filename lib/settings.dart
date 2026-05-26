@@ -199,7 +199,6 @@ class _SettingsPageState extends State<SettingsPage> {
               onChanged: (value) {
                 themeProvider.toggleTheme();
               },
-              activeThumbColor: const Color(0xFF4A7EB5),
             ),
           ],
         ),
@@ -307,7 +306,6 @@ class _SettingsPageState extends State<SettingsPage> {
               Switch(
                 value: _notificationsEnabled,
                 onChanged: (value) => _handleNotificationToggle(value),
-                activeThumbColor: const Color(0xFF4A7EB5),
               ),
           ],
         ),
