@@ -12,6 +12,7 @@ class OneSignalService {
   static void Function(NotificationModel notification)? onNotificationModel;
 
   static Future<void> initialize() async {
+    if (kIsWeb) return; // OneSignal has no web implementation
     try {
       // Initialize OneSignal with your App ID (no debug logging)
       OneSignal.initialize(_appId);
@@ -46,6 +47,7 @@ class OneSignalService {
   /// Call this ONLY after showing rationale dialog explaining why notifications are needed
   /// Returns true if permission granted, false otherwise
   static Future<bool> requestNotificationPermission() async {
+    if (kIsWeb) return false;
     try {
       final granted = await OneSignal.Notifications.requestPermission(true);
       await _debugLogPushSubscription('permission granted=$granted');
@@ -57,6 +59,7 @@ class OneSignalService {
 
   /// Check if notification permission is already granted
   static Future<bool> hasNotificationPermission() async {
+    if (kIsWeb) return false;
     try {
       return OneSignal.Notifications.permission;
     } catch (e) {
@@ -65,6 +68,7 @@ class OneSignalService {
   }
 
   static Future<void> _debugLogPushSubscription(String reason) async {
+    if (kIsWeb) return;
     final delays = <int>[0, 2, 5];
     for (final seconds in delays) {
       if (seconds > 0) {
@@ -232,6 +236,7 @@ class OneSignalService {
 
   // Get the player ID (user's unique identifier)
   static Future<String?> getPlayerId() async {
+    if (kIsWeb) return null;
     try {
       final user = OneSignal.User;
       return user.pushSubscription.id;
@@ -242,6 +247,7 @@ class OneSignalService {
 
   // Set user tags for targeting
   static Future<void> setUserTags(Map<String, String> tags) async {
+    if (kIsWeb) return;
     try {
       OneSignal.User.addTags(tags);
     } catch (e) {
@@ -251,6 +257,7 @@ class OneSignalService {
 
   // Set external user ID (for linking with your backend)
   static Future<void> setExternalUserId(String userId) async {
+    if (kIsWeb) return;
     try {
       OneSignal.User.addAlias("external_id", userId);
     } catch (e) {
@@ -260,6 +267,7 @@ class OneSignalService {
 
   // Remove external user ID
   static Future<void> removeExternalUserId() async {
+    if (kIsWeb) return;
     try {
       OneSignal.User.removeAlias("external_id");
     } catch (e) {
