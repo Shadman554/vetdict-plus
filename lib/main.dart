@@ -82,8 +82,8 @@ void main() async {
   // Initialize OneSignal
   await OneSignalService.initialize();
 
-  // Pre-warm store-based update check (runs in background)
-  UpdateService.initialize();
+  // Pre-warm store-based update check (runs in background, mobile only)
+  if (!kIsWeb) UpdateService.initialize();
 
   // Initialize providers
   final notificationProvider = NotificationProvider();
@@ -2371,8 +2371,8 @@ class _HomePageState extends State<HomePage> {
           SystemNavigator.pop();
         }
       },
-      child: VetDictUpgradeAlert(
-        child: Scaffold(
+      child: kIsWeb
+          ? Scaffold(
           body: SafeArea(
             child: _currentScreen(),
           ),
@@ -2448,8 +2448,70 @@ class _HomePageState extends State<HomePage> {
                   ),
             ),
           ),
-        ), // closes Scaffold
-      ), // closes VetDictUpgradeAlert
+        ) // closes Scaffold (web)
+          : VetDictUpgradeAlert(
+              child: Scaffold(
+                body: SafeArea(
+                  child: _currentScreen(),
+                ),
+                bottomNavigationBar: SafeArea(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 20.0 : 15.0,
+                      vertical: isTablet ? 10 : 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: themeProvider.theme.scaffoldBackgroundColor,
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 20,
+                          color: Colors.black.withValues(alpha: .1),
+                        ),
+                      ],
+                    ),
+                    child: GNav(
+                      rippleColor: themeProvider.isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey[300]!,
+                      hoverColor: themeProvider.isDarkMode
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.grey[100]!,
+                      gap: 8,
+                      activeColor: Colors.white,
+                      iconSize: isTablet ? 22 : 24,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 20 : 15,
+                        vertical: isTablet ? 12 : 10,
+                      ),
+                      duration: const Duration(milliseconds: 400),
+                      tabBackgroundColor: themeProvider.isDarkMode
+                          ? const Color(0xFF1A3460)
+                          : themeProvider.theme.colorScheme.primary,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      color: themeProvider.isDarkMode
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : themeProvider.theme.colorScheme.primary,
+                      tabs: const [
+                        GButton(icon: Icons.favorite_rounded, text: 'دڵخوازەکان'),
+                        GButton(icon: Icons.history_rounded, text: 'مێژوو'),
+                        GButton(icon: Icons.home_rounded, text: 'سەرەکی'),
+                        GButton(icon: Icons.menu_book_rounded, text: 'کتێبەکان'),
+                        GButton(icon: Icons.person_rounded, text: 'پرۆفایل'),
+                      ],
+                      selectedIndex: _selectedIndex,
+                      onTabChange: (index) {
+                        if (_searchFocusNode.hasFocus) {
+                          _searchFocusNode.unfocus();
+                        }
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ), // closes Scaffold (native)
+            ), // closes VetDictUpgradeAlert
     );
   }
 }
