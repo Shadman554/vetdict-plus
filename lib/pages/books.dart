@@ -828,7 +828,9 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
   PdfTextSearchResult _searchResult = PdfTextSearchResult();
   int _currentSearchIndex = 0;
   bool _isDisposed = false;
-  bool _isPdfLoadedFromFile = false; // New state to track if PDF is loaded from file cache
+  bool _isPdfLoadedFromFile = false;
+  bool _hasError = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -952,20 +954,21 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
       }
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
-        // print('PDF download cancelled.');
+        // cancelled — no error to show
       } else {
         if (!_isDisposed && mounted) {
+          String msg = 'کتێبەکە نەتوانرا بگیرێت. پەیوەندی ئینتەرنێتەکەت بپشکنە.';
+          if (e.type == DioExceptionType.receiveTimeout) {
+            msg = 'کتێبەکە زۆر گەورەیە — دووبارە هەوڵ بدەرەوە.';
+          } else if (e.response != null) {
+            msg = 'هەڵە ${e.response?.statusCode} — کتێبەکە نەتوانرا بگیرێت.';
+          }
           _safeSetState(() {
             _isLoading = false;
             _loadingProgress = 0;
+            _hasError = true;
+            _errorMessage = msg;
           });
-          String errorMessage = 'Error loading PDF. Please check your internet connection and try again.';
-          if (e.type == DioExceptionType.receiveTimeout) {
-            errorMessage = 'PDF download timed out. Please try again.';
-          } else if (e.response != null) {
-            errorMessage = 'Error: ${e.response?.statusCode} - Failed to download PDF.';
-          }
-          _showSnackBar(errorMessage);
         }
       }
     } catch (e) {
@@ -973,8 +976,9 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
         _safeSetState(() {
           _isLoading = false;
           _loadingProgress = 0;
+          _hasError = true;
+          _errorMessage = 'هەڵەیەکی ئاگاداری نەکراو: $e';
         });
-        _showSnackBar('An unexpected error occurred: $e');
       }
     }
   }
@@ -1033,6 +1037,47 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
     required bool isDark,
     required ThemeData theme,
   }) {
+    if (_hasError) {
+      return Container(
+        key: const ValueKey('error'),
+        color: scaffoldBg,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: primaryColor.withValues(alpha: 0.6)),
+                const SizedBox(height: 20),
+                Text(
+                  _errorMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: onSurfaceColor, fontSize: 15, fontFamily: 'NRT'),
+                ),
+                const SizedBox(height: 28),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    _safeSetState(() {
+                      _hasError = false;
+                      _errorMessage = '';
+                    });
+                    _loadPdf();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('دووبارە هەوڵ بدەرەوە'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isLoading) {
       return Container(
         key: const ValueKey('loading'),

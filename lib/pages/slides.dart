@@ -44,28 +44,24 @@ class _SlidesPageState extends State<SlidesPage> {
     }
   }
 
-  // Convert Google Drive share/preview links to direct-view image URLs (same as instruments page)
+  // Convert Google Drive share/preview links to server-side proxy URLs (avoids CORS on web)
   String _resolveImageUrl(String url) {
     try {
       if (url.isEmpty) return url;
+      // Already a proxy URL — ensure it's absolute for CachedNetworkImage
+      if (url.contains('/media-proxy?')) return url;
       final uri = Uri.parse(url);
       if (uri.host.contains('drive.google.com')) {
-        if (uri.path.startsWith('/uc') && uri.queryParameters['id'] != null) {
-          final id = uri.queryParameters['id'];
-          return 'https://drive.google.com/uc?export=view&id=$id';
-        }
-
         final fileIdMatch = RegExp(r"/d/([^/]+)").firstMatch(uri.path);
         String? id = fileIdMatch?.group(1);
         id ??= uri.queryParameters['id'];
-
         if (id != null && id.isNotEmpty) {
-          return 'https://drive.google.com/uc?export=view&id=$id';
+          final thumbnailUrl = 'https://drive.google.com/thumbnail?id=$id&sz=w400';
+          final proxyPath = '/media-proxy?url=${Uri.encodeComponent(thumbnailUrl)}';
+          return kIsWeb ? '${Uri.base.origin}$proxyPath' : proxyPath;
         }
       }
-    } catch (_) {
-      // If parsing fails, just return original URL
-    }
+    } catch (_) {}
     return url;
   }
 
