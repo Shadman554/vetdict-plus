@@ -13,15 +13,11 @@ class ConnectivityService {
   /// Returns true if online, false if offline.
   static Future<bool> isOnline() async {
     if (kIsWeb) {
-      try {
-        final response = await http
-            .get(Uri.parse('https://www.google.com'))
-            .timeout(const Duration(seconds: 5));
-        return response.statusCode < 500;
-      } catch (e) {
-        developer.log('[Connectivity] Web offline: $e');
-        return false;
-      }
+      // On web, cross-origin pings (e.g. google.com) are blocked by CORS and
+      // always fail, giving a false "offline" result on every page.
+      // Instead we optimistically return true and let the real API calls
+      // report connectivity errors if the network is actually down.
+      return true;
     } else {
       return _nativeIsOnline();
     }
