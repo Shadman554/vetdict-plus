@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "flutter clean && flutter pub get && flutter build web --pwa-strategy=none && python3 server.py"
+args = "flutter clean && flutter pub get && flutter build web --pwa-strategy=none --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID && python3 server.py"
 waitForPort = 5000
 
 [[ports]]
@@ -38,3 +38,8 @@ externalPort = 80
 deploymentTarget = "static"
 build = ["flutter", "build", "web"]
 publicDir = "build/web"
+
+[userenv]
+
+[userenv.shared]
+GOOGLE_WEB_CLIENT_ID = "926387769090-9rqg69tucg9d2rcas57n7lf9eqp03vkd.apps.googleusercontent.com"
