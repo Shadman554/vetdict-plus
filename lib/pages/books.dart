@@ -54,14 +54,19 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
     }
   }
 
-  /// Convert any Google Drive viewer/share URL to a direct image URL.
+  /// Convert any Google Drive URL to a thumbnail URL that loads in web browsers.
+  /// Google's /uc?export=view endpoint is CORS-blocked on web; the /thumbnail
+  /// endpoint works from any browser without authentication.
   String _processCoverUrl(String url) {
     if (url.isEmpty) return url;
-    // Handle: https://drive.google.com/file/d/ID/view?...
-    final match = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
-    if (match != null) {
-      final fileId = match.group(1)!;
-      return 'https://drive.google.com/uc?export=view&id=$fileId';
+    // Extract file ID from: /file/d/ID/view, /file/d/ID/preview, open?id=ID, uc?id=ID, thumbnail?id=ID
+    final fileMatch = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
+    if (fileMatch != null) {
+      return 'https://drive.google.com/thumbnail?id=${fileMatch.group(1)!}&sz=w400';
+    }
+    final idMatch = RegExp(r'[?&]id=([a-zA-Z0-9_-]+)').firstMatch(url);
+    if (idMatch != null && url.contains('drive.google.com')) {
+      return 'https://drive.google.com/thumbnail?id=${idMatch.group(1)!}&sz=w400';
     }
     return url;
   }
@@ -84,8 +89,8 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
       if (cachedBooks != null && cachedBooks.isNotEmpty) {
         final firstBook = Map<String, dynamic>.from(jsonDecode(cachedBooks.first));
         final coverUrl = (firstBook['cover_url'] ?? firstBook['image_url'] ?? firstBook['coverUrl'] ?? '').toString();
-        // If the stored cover URL is a Google Drive viewer URL (not already converted), clear cache
-        if (coverUrl.contains('drive.google.com/file/d/') || coverUrl.contains('drive.google.com/open')) {
+        // If the stored cover URL is NOT already a thumbnail URL, clear cache so it gets re-fetched
+        if (coverUrl.contains('drive.google.com') && !coverUrl.contains('/thumbnail?')) {
           await prefs.remove('books');
           // Also clear the image cache so old broken image data is re-fetched
           await DefaultCacheManager().emptyCache();
