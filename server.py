@@ -80,6 +80,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+        except BrokenPipeError:
+            # Client disconnected mid-request — nothing to do
+            pass
         except Exception as e:
             self.send_error(502, f'Proxy error: {e}')
 
