@@ -59,14 +59,24 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
   /// endpoint works from any browser without authentication.
   String _processCoverUrl(String url) {
     if (url.isEmpty) return url;
-    // Extract file ID from: /file/d/ID/view, /file/d/ID/preview, open?id=ID, uc?id=ID, thumbnail?id=ID
+    // Already a proxy URL — don't double-wrap
+    if (url.startsWith('/media-proxy')) return url;
+
+    String? driveId;
     final fileMatch = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
     if (fileMatch != null) {
-      return 'https://drive.google.com/thumbnail?id=${fileMatch.group(1)!}&sz=w400';
+      driveId = fileMatch.group(1);
+    } else {
+      final idMatch = RegExp(r'[?&]id=([a-zA-Z0-9_-]+)').firstMatch(url);
+      if (idMatch != null && url.contains('drive.google.com')) {
+        driveId = idMatch.group(1);
+      }
     }
-    final idMatch = RegExp(r'[?&]id=([a-zA-Z0-9_-]+)').firstMatch(url);
-    if (idMatch != null && url.contains('drive.google.com')) {
-      return 'https://drive.google.com/thumbnail?id=${idMatch.group(1)!}&sz=w400';
+
+    if (driveId != null) {
+      // On web, route through our server proxy to avoid CORS issues with Google Drive
+      final thumbnailUrl = 'https://drive.google.com/thumbnail?id=$driveId&sz=w400';
+      return '/media-proxy?url=${Uri.encodeComponent(thumbnailUrl)}';
     }
     return url;
   }
@@ -89,8 +99,8 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
       if (cachedBooks != null && cachedBooks.isNotEmpty) {
         final firstBook = Map<String, dynamic>.from(jsonDecode(cachedBooks.first));
         final coverUrl = (firstBook['cover_url'] ?? firstBook['image_url'] ?? firstBook['coverUrl'] ?? '').toString();
-        // If the stored cover URL is NOT already a thumbnail URL, clear cache so it gets re-fetched
-        if (coverUrl.contains('drive.google.com') && !coverUrl.contains('/thumbnail?')) {
+        // If the stored cover URL is not already a proxy URL, clear cache so it gets re-fetched
+        if (!coverUrl.startsWith('/media-proxy') && coverUrl.contains('drive.google.com')) {
           await prefs.remove('books');
           // Also clear the image cache so old broken image data is re-fetched
           await DefaultCacheManager().emptyCache();
@@ -704,12 +714,22 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
 
   void _openPDF(String url, String title) {
     String pdfUrl = url;
-    if (url.contains('drive.google.com/file/d/')) {
-      final match = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
-      if (match != null) {
-        final fileId = match.group(1);
-        pdfUrl = 'https://drive.google.com/uc?export=view&id=$fileId';
+    // Extract Google Drive file ID from any Drive URL format
+    String? driveId;
+    final fileMatch = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
+    if (fileMatch != null) {
+      driveId = fileMatch.group(1);
+    } else {
+      final idMatch = RegExp(r'[?&]id=([a-zA-Z0-9_-]+)').firstMatch(url);
+      if (idMatch != null && url.contains('drive.google.com')) {
+        driveId = idMatch.group(1);
       }
+    }
+    if (driveId != null) {
+      // Route PDF downloads through our server proxy to avoid CORS issues with Google Drive.
+      // Use export=download to get raw PDF bytes (not the HTML viewer page).
+      final directUrl = 'https://drive.google.com/uc?export=download&id=$driveId';
+      pdfUrl = '/media-proxy?url=${Uri.encodeComponent(directUrl)}';
     }
 
     Navigator.push(
