@@ -59,8 +59,13 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
   /// endpoint works from any browser without authentication.
   String _processCoverUrl(String url) {
     if (url.isEmpty) return url;
-    // Already a proxy URL — don't double-wrap
-    if (url.startsWith('/media-proxy')) return url;
+
+    // Already a proxy path — make it absolute for CachedNetworkImage (needs https://)
+    if (url.startsWith('/media-proxy')) {
+      return kIsWeb ? '${Uri.base.origin}$url' : url;
+    }
+    // Already an absolute proxy URL — return as-is
+    if (url.contains('/media-proxy?')) return url;
 
     String? driveId;
     final fileMatch = RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(url);
@@ -74,9 +79,10 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
     }
 
     if (driveId != null) {
-      // On web, route through our server proxy to avoid CORS issues with Google Drive
       final thumbnailUrl = 'https://drive.google.com/thumbnail?id=$driveId&sz=w400';
-      return '/media-proxy?url=${Uri.encodeComponent(thumbnailUrl)}';
+      final proxyPath = '/media-proxy?url=${Uri.encodeComponent(thumbnailUrl)}';
+      // CachedNetworkImage / flutter_cache_manager requires absolute URLs
+      return kIsWeb ? '${Uri.base.origin}$proxyPath' : proxyPath;
     }
     return url;
   }
@@ -90,21 +96,38 @@ class _BooksPageState extends State<BooksPage> with SingleTickerProviderStateMix
     _loadRecentBooks();
   }
 
-  /// Clear cached books if they contain old-format cover URLs (Google Drive /view links).
+  /// Clear cached books/recent books if they contain old-format cover URLs.
   /// This forces a fresh fetch with properly converted URLs.
   Future<void> _clearStaleCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+
+      bool needsImageCacheClear = false;
+
+      // Check main books cache
       final cachedBooks = prefs.getStringList('books');
       if (cachedBooks != null && cachedBooks.isNotEmpty) {
         final firstBook = Map<String, dynamic>.from(jsonDecode(cachedBooks.first));
         final coverUrl = (firstBook['cover_url'] ?? firstBook['image_url'] ?? firstBook['coverUrl'] ?? '').toString();
-        // If the stored cover URL is not already a proxy URL, clear cache so it gets re-fetched
-        if (!coverUrl.startsWith('/media-proxy') && coverUrl.contains('drive.google.com')) {
+        if (!coverUrl.contains('/media-proxy') && coverUrl.contains('drive.google.com')) {
           await prefs.remove('books');
-          // Also clear the image cache so old broken image data is re-fetched
-          await DefaultCacheManager().emptyCache();
+          needsImageCacheClear = true;
         }
+      }
+
+      // Check recent books cache — same stale check
+      final recentBooks = prefs.getStringList('recentBooks');
+      if (recentBooks != null && recentBooks.isNotEmpty) {
+        final firstBook = Map<String, dynamic>.from(jsonDecode(recentBooks.first));
+        final coverUrl = (firstBook['cover_url'] ?? firstBook['image_url'] ?? firstBook['coverUrl'] ?? '').toString();
+        if (!coverUrl.contains('/media-proxy') && coverUrl.contains('drive.google.com')) {
+          await prefs.remove('recentBooks');
+          needsImageCacheClear = true;
+        }
+      }
+
+      if (needsImageCacheClear) {
+        await DefaultCacheManager().emptyCache();
       }
     } catch (_) {}
   }
@@ -887,13 +910,18 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
 
       // Download from network
       _showSnackBar('کتێبەکە دادەبەزێت...');
+      // Dio on web requires absolute URLs — resolve relative proxy paths against the page origin.
+      String downloadUrl = widget.url;
+      if (kIsWeb && downloadUrl.startsWith('/')) {
+        downloadUrl = '${Uri.base.origin}$downloadUrl';
+      }
       final dio = Dio();
       final response = await dio.get(
-        widget.url,
+        downloadUrl,
         options: Options(
           responseType: ResponseType.bytes,
-          receiveTimeout: const Duration(seconds: 30),
-          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 10),
+          sendTimeout: const Duration(seconds: 60),
         ),
         cancelToken: _cancelToken,
         onReceiveProgress: (received, total) {
@@ -1101,7 +1129,9 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
                 },
               )
             : SfPdfViewer.network(
-                widget.url,
+                (kIsWeb && widget.url.startsWith('/'))
+                    ? '${Uri.base.origin}${widget.url}'
+                    : widget.url,
                 controller: _pdfViewerController,
                 pageLayoutMode: PdfPageLayoutMode.single,
                 scrollDirection: PdfScrollDirection.vertical,
