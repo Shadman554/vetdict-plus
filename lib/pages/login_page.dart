@@ -357,8 +357,8 @@ class _LoginPageState extends State<LoginPage> {
                             
                             const SizedBox(height: 12),
                             
-                            // Divider with "یان" (Or)
-                            Row(
+                            // Divider + Google button — hidden on web (no Google OAuth client configured)
+                            if (!kIsWeb) Row(
                               children: [
                                 Expanded(
                                   child: Divider(
@@ -387,10 +387,10 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             
-                            const SizedBox(height: 10),
+                            if (!kIsWeb) const SizedBox(height: 10),
                             
                             // Google Sign-In Button
-                            Container(
+                            if (!kIsWeb) Container(
                               width: double.infinity,
                               height: 56,
                               decoration: BoxDecoration(

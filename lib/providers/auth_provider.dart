@@ -34,8 +34,8 @@ class AuthProvider with ChangeNotifier {
   String? get token => _token;
   GoogleSignIn? get googleSignIn => _googleSignIn;
 
-  // API Base URL from config
-  static String get baseUrl => AppConfig.apiBaseUrl;
+  // API Base URL from config — use relative path on web so calls go through the local proxy
+  static String get baseUrl => kIsWeb ? '' : AppConfig.apiBaseUrl;
 
   AuthProvider() {
     _checkSignInStatus();
@@ -830,7 +830,15 @@ class AuthProvider with ChangeNotifier {
     
     try {
 
-      
+      if (_googleSignIn == null) {
+        _isLoading = false;
+        notifyListeners();
+        return {
+          'success': false,
+          'message': 'چوونە ژوورەوە بە گووگڵ لەسەر وێب بەردەست نییە. تکایە ئیمەیڵ و وشەی نهێنیت بەکاربهێنە.',
+        };
+      }
+
       // Sign out first to ensure fresh login
       await _googleSignIn?.signOut();
       
@@ -1252,7 +1260,15 @@ class AuthProvider with ChangeNotifier {
     
     try {
 
-      
+      if (_googleSignIn == null) {
+        _isLoading = false;
+        notifyListeners();
+        return {
+          'success': false,
+          'message': 'چوونە ژوورەوە بە گووگڵ لەسەر وێب بەردەست نییە. تکایە ئیمەیڵ و وشەی نهێنیت بەکاربهێنە.',
+        };
+      }
+
       // Sign out first to ensure fresh login
       await _googleSignIn?.signOut();
       
