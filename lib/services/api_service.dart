@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../models/word.dart';
@@ -19,7 +20,7 @@ import 'secure_storage_service.dart';
 class ApiService {
   ApiService();
 
-  static const String _baseUrl = 'https://vetdict.space';
+  static String get _baseUrl => kIsWeb ? '' : 'https://vetdict.space';
 
   // Secure storage instance
   final _secureStorage = SecureStorageService();
