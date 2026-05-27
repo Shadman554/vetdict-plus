@@ -17,22 +17,22 @@ class AuthProvider with ChangeNotifier {
   // Secure storage instance
   final _secureStorage = SecureStorageService();
 
-  // Google Sign-In instance - configured from AppConfig
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // iOS Client ID (for iOS authentication)
-    clientId: AppConfig.googleClientIdIOS,
-    
-    // Web Application Client ID (required for Android backend authentication)
-    serverClientId: AppConfig.googleServerClientId,
-    
-    scopes: ['email', 'profile'],
-  );
+  // Google Sign-In instance — only initialized on native platforms or when
+  // a web client ID is configured. The web GSI library throws immediately
+  // if clientId is empty, so we skip construction on web without a key.
+  final GoogleSignIn? _googleSignIn = (kIsWeb && AppConfig.googleClientIdIOS.isEmpty)
+      ? null
+      : GoogleSignIn(
+          clientId: AppConfig.googleClientIdIOS,
+          serverClientId: AppConfig.googleServerClientId,
+          scopes: ['email', 'profile'],
+        );
 
   Map<String, dynamic>? get user => _user;
   bool get isSignedIn => _isSignedIn;
   bool get isLoading => _isLoading;
   String? get token => _token;
-  GoogleSignIn get googleSignIn => _googleSignIn;
+  GoogleSignIn? get googleSignIn => _googleSignIn;
 
   // API Base URL from config
   static String get baseUrl => AppConfig.apiBaseUrl;
@@ -616,7 +616,7 @@ class AuthProvider with ChangeNotifier {
 
     // Sign out from Google as well
     try {
-      await _googleSignIn.signOut();
+      await _googleSignIn?.signOut();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error signing out from Google: $e');
@@ -832,10 +832,10 @@ class AuthProvider with ChangeNotifier {
 
       
       // Sign out first to ensure fresh login
-      await _googleSignIn.signOut();
+      await _googleSignIn?.signOut();
       
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn?.signIn();
       
       if (googleUser == null) {
 
@@ -1254,10 +1254,10 @@ class AuthProvider with ChangeNotifier {
 
       
       // Sign out first to ensure fresh login
-      await _googleSignIn.signOut();
+      await _googleSignIn?.signOut();
       
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn?.signIn();
       
       if (googleUser == null) {
 
@@ -1349,7 +1349,7 @@ class AuthProvider with ChangeNotifier {
   // Sign out from Google
   Future<void> signOutFromGoogle() async {
     try {
-      await _googleSignIn.signOut();
+      await _googleSignIn?.signOut();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error signing out from Google: $e');
@@ -1389,7 +1389,7 @@ class AuthProvider with ChangeNotifier {
         
         // Sign out from Google if applicable
         try {
-          await _googleSignIn.signOut();
+          await _googleSignIn?.signOut();
         } catch (e) {
           if (kDebugMode) {
             debugPrint('Error signing out from Google after account delete: $e');
