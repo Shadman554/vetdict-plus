@@ -17,22 +17,21 @@ class AuthProvider with ChangeNotifier {
   // Secure storage instance
   final _secureStorage = SecureStorageService();
 
-  // Google Sign-In instance — only initialized on native platforms or when
-  // a web client ID is configured. The web GSI library throws immediately
-  // if clientId is empty, so we skip construction on web without a key.
-  final GoogleSignIn? _googleSignIn = (kIsWeb && AppConfig.googleClientIdIOS.isEmpty)
-      ? null
-      : GoogleSignIn(
-          clientId: AppConfig.googleClientIdIOS,
-          serverClientId: AppConfig.googleServerClientId,
-          scopes: ['email', 'profile'],
-        );
+  // Google Sign-In instance — always initialized so the button works on all
+  // platforms. On web it uses the web OAuth client ID; on mobile it uses the
+  // iOS client ID. Pass an empty string when not configured and Google will
+  // surface its own error instead of us hiding the button entirely.
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb ? AppConfig.googleWebClientId : AppConfig.googleClientIdIOS,
+    serverClientId: AppConfig.googleServerClientId,
+    scopes: ['email', 'profile'],
+  );
 
   Map<String, dynamic>? get user => _user;
   bool get isSignedIn => _isSignedIn;
   bool get isLoading => _isLoading;
   String? get token => _token;
-  GoogleSignIn? get googleSignIn => _googleSignIn;
+  GoogleSignIn get googleSignIn => _googleSignIn;
 
   // API Base URL from config — use relative path on web so calls go through the local proxy
   static String get baseUrl => kIsWeb ? '' : AppConfig.apiBaseUrl;
@@ -616,7 +615,7 @@ class AuthProvider with ChangeNotifier {
 
     // Sign out from Google as well
     try {
-      await _googleSignIn?.signOut();
+      await _googleSignIn.signOut();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error signing out from Google: $e');
@@ -830,20 +829,11 @@ class AuthProvider with ChangeNotifier {
     
     try {
 
-      if (_googleSignIn == null) {
-        _isLoading = false;
-        notifyListeners();
-        return {
-          'success': false,
-          'message': 'چوونە ژوورەوە بە گووگڵ لەسەر وێب بەردەست نییە. تکایە ئیمەیڵ و وشەی نهێنیت بەکاربهێنە.',
-        };
-      }
-
       // Sign out first to ensure fresh login
-      await _googleSignIn?.signOut();
+      await _googleSignIn.signOut();
       
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn?.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
 
@@ -1260,20 +1250,11 @@ class AuthProvider with ChangeNotifier {
     
     try {
 
-      if (_googleSignIn == null) {
-        _isLoading = false;
-        notifyListeners();
-        return {
-          'success': false,
-          'message': 'چوونە ژوورەوە بە گووگڵ لەسەر وێب بەردەست نییە. تکایە ئیمەیڵ و وشەی نهێنیت بەکاربهێنە.',
-        };
-      }
-
       // Sign out first to ensure fresh login
-      await _googleSignIn?.signOut();
+      await _googleSignIn.signOut();
       
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn?.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
 
@@ -1365,7 +1346,7 @@ class AuthProvider with ChangeNotifier {
   // Sign out from Google
   Future<void> signOutFromGoogle() async {
     try {
-      await _googleSignIn?.signOut();
+      await _googleSignIn.signOut();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error signing out from Google: $e');
@@ -1405,7 +1386,7 @@ class AuthProvider with ChangeNotifier {
         
         // Sign out from Google if applicable
         try {
-          await _googleSignIn?.signOut();
+          await _googleSignIn.signOut();
         } catch (e) {
           if (kDebugMode) {
             debugPrint('Error signing out from Google after account delete: $e');
